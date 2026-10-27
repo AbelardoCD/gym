@@ -7,12 +7,13 @@ import {
 import SendOutlined from '@mui/icons-material/SendOutlined';
 import SearchOutlined from '@mui/icons-material/SearchOutlined';
 import ArrowBackOutlined from '@mui/icons-material/ArrowBackOutlined';
+import NotificationsActiveOutlined from '@mui/icons-material/NotificationsActiveOutlined';
 import DoneOutlined from '@mui/icons-material/DoneOutlined';
 import DoneAllOutlined from '@mui/icons-material/DoneAllOutlined';
 import { api, errorMessage } from '../api/client';
-import { connectRealtime } from '../api/realtime';
 import { rolesLabel, type ChatEvent, type ChatRequest, type Conversation, type Message, type UserSummary } from '../api/types';
 import { useAuth } from '../auth/AuthContext';
+import { useNotifications } from '../components/Notifications';
 import { initials } from '../components/UserAvatar';
 import { tones } from '../theme';
 
@@ -40,22 +41,25 @@ export default function ChatPage() {
   const activeRef = useRef(activeId);
   activeRef.current = activeId;
 
+  const { subscribe, refreshUnread, browserPermission, askBrowserPermission } = useNotifications();
+
   const refreshLists = useCallback(() => {
     api.conversations().then(setConversations);
     api.incomingRequests().then(setIncoming);
     api.outgoingRequests().then(setOutgoing);
-  }, []);
+    refreshUnread();
+  }, [refreshUnread]);
 
   useEffect(refreshLists, [refreshLists]);
 
   // Eventos en tiempo real: mensajes nuevos, lecturas y solicitudes.
   useEffect(
     () =>
-      connectRealtime((e: ChatEvent) => {
+      subscribe((e: ChatEvent) => {
         if (e.type === 'MENSAJE') {
           if (e.payload.conversationId === activeRef.current) {
             setMessages((prev) => (prev.some((m) => m.id === e.payload.id) ? prev : [...prev, e.payload]));
-            if (e.payload.senderId !== user?.id) api.markRead(e.payload.conversationId);
+            if (e.payload.senderId !== user?.id) api.markRead(e.payload.conversationId).then(refreshUnread);
           }
           api.conversations().then(setConversations);
         } else if (e.type === 'LEIDO') {
@@ -66,16 +70,22 @@ export default function ChatPage() {
           refreshLists();
         }
       }),
-    [refreshLists, user?.id],
+    [subscribe, refreshLists, refreshUnread, user?.id],
   );
 
   useEffect(() => {
     if (!activeId) return;
     api.messages(activeId).then((page) => setMessages([...page].reverse()));
-    api.markRead(activeId).then(() => api.conversations().then(setConversations));
+    api.markRead(activeId).then(() => {
+      api.conversations().then(setConversations);
+      refreshUnread();
+    });
   }, [activeId]);
 
-  useEffect(() => bottomRef.current?.scrollIntoView({ behavior: 'smooth' }), [messages]);
+  // Con llaves: en Chrome reciente scrollIntoView devuelve una promesa, y React la tomaría como función de limpieza.
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
 
   useEffect(() => {
     if (query.trim().length < 2) {
@@ -120,7 +130,14 @@ export default function ChatPage() {
       {showList && (
         <Box sx={{ width: { xs: '100%', md: 340 }, borderRight: { xs: 'none', md: `1px solid ${tones.border}` }, display: 'flex', flexDirection: 'column' }}>
           <Box sx={{ p: 2 }}>
-            <Typography variant="h6" sx={{ mb: 1.5 }}>Chat</Typography>
+            <Stack direction="row" sx={{ alignItems: 'center', justifyContent: 'space-between', mb: 1.5 }}>
+              <Typography variant="h6">Chat</Typography>
+              {browserPermission === 'default' && (
+                <Button size="small" color="inherit" startIcon={<NotificationsActiveOutlined fontSize="small" />} onClick={askBrowserPermission}>
+                  Activar avisos
+                </Button>
+              )}
+            </Stack>
             <TextField
               placeholder="Buscar personas…"
               value={query}

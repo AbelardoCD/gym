@@ -4,6 +4,7 @@ import { Box, CircularProgress } from '@mui/material';
 import type { PermissionCode } from './api/types';
 import { useAuth } from './auth/AuthContext';
 import Layout from './components/Layout';
+import { NotificationsProvider } from './components/Notifications';
 import { NAV_ITEMS } from './navigation';
 import LoginPage from './pages/LoginPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
@@ -50,7 +51,7 @@ export default function App() {
       <Route path="/login" element={<LoginPage />} />
       <Route path="/recuperar" element={<ForgotPasswordPage />} />
       <Route path="/restablecer" element={<ResetPasswordPage />} />
-      <Route element={<RequireLogin><Layout /></RequireLogin>}>
+      <Route element={<RequireLogin><NotificationsProvider><Layout /></NotificationsProvider></RequireLogin>}>
         <Route index element={<Allow perms={['INICIO']}><HomePage /></Allow>} />
         <Route path="/mis-rutinas/:id" element={<Allow perms={['INICIO']}><MyRoutinePage /></Allow>} />
         <Route path="/rutinas" element={<Allow perms={['RUTINAS']}><RoutinesPage /></Allow>} />

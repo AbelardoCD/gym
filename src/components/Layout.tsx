@@ -9,6 +9,7 @@ import LogoutOutlined from '@mui/icons-material/LogoutOutlined';
 import { rolesLabel } from '../api/types';
 import { useAuth } from '../auth/AuthContext';
 import { NAV_ITEMS } from '../navigation';
+import { ChatBadge } from './Notifications';
 import Brand from './Brand';
 import UserAvatar from './UserAvatar';
 
@@ -38,7 +39,7 @@ export default function Layout() {
               setOpen(false);
             }}
           >
-            <ListItemIcon sx={{ minWidth: 36, color: 'text.secondary' }}>{i.icon}</ListItemIcon>
+            <ListItemIcon sx={{ minWidth: 36, color: 'text.secondary' }}>{i.path === '/chat' ? <ChatBadge>{i.icon}</ChatBadge> : i.icon}</ListItemIcon>
             <ListItemText primary={i.label} primaryTypographyProps={{ fontSize: 14, fontWeight: 500 }} />
           </ListItemButton>
         ))}

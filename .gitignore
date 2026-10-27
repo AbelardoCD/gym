@@ -1,0 +1,14 @@
+# Dependencias y compilados
+node_modules/
+dist/
+*.tsbuildinfo
+
+# Variables locales
+.env
+.env.local
+
+# Registros y editores
+*.log
+.idea/
+.vscode/
+.DS_Store
