@@ -1,0 +1,2 @@
+// Archivo obsoleto: ya no se usa y puedes borrarlo.
+export {};
